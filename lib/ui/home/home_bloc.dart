@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:numbers_light/domain/model/number_light.dart';
+import 'package:numbers_light/navigation/global_navigation_manager.dart';
 import 'package:numbers_light/ui/home/home_event.dart';
 import 'package:numbers_light/ui/home/home_state.dart';
 import 'package:numbers_light/ui/home/model/number_light_presentation.dart';
@@ -9,9 +10,10 @@ import 'package:numbers_light/ui/mapping/mapping.dart';
 
 @injectable
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
+  final GlobalNavigationManager _navigatorManager;
   List<NumberLightPresentation> _numberLightsList = [];
 
-  HomeBloc(): super(HomeInitialState()) {
+  HomeBloc(this._navigatorManager): super(HomeInitialState()) {
     on<HomeCreated>(_handleHomeCreated);
     on<HomeItemStateChanged>(_handleHomeItemStateChanged);
   }
@@ -36,6 +38,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       updatedList[elementIndex] = updatedList[elementIndex].copyWith(state: event.state);
       _numberLightsList = updatedList;
       _yieldBasedOnCurrentState(emit);
+      if (updatedList[elementIndex].state == NumberLightSelectionState.selected) {
+        _navigatorManager.pushDetails(updatedList[elementIndex].id);
+      }
     }
   }
 

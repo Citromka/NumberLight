@@ -1,6 +1,5 @@
 {
     "appTitle": "Number Light",
-    "@helloWorld": {
-      "description": "The conventional newborn programmer greeting"
-    }
+    "detailsTitle": "Number detail",
+    "itemNotFoundError": "No data was found for the selected item!"
 }
