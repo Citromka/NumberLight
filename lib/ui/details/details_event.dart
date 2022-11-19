@@ -1,7 +1,15 @@
+import 'package:flutter/material.dart';
+
 abstract class DetailsEvent {}
 
-class DetailsCreated extends DetailsEvent {
-  final String selectedItemId;
+class DetailsSelected extends DetailsEvent {
+  final String? selectedItemId;
 
-  DetailsCreated(this.selectedItemId);
+  DetailsSelected(this.selectedItemId);
+}
+
+class DetailsOrientationEvent extends DetailsEvent {
+  final Orientation orientation;
+
+  DetailsOrientationEvent(this.orientation);
 }

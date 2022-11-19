@@ -4,13 +4,11 @@ import 'package:numbers_light/ui/home/widgets/number_list_item.dart';
 
 class NumberList extends StatelessWidget {
   final List<NumberLightPresentation> items;
-  final Function(NumberLightPresentation) onItemFocused;
   final Function(NumberLightPresentation) onItemSelected;
 
   const NumberList({
     Key? key,
     required this.items,
-    required this.onItemFocused,
     required this.onItemSelected,
   }) : super(key: key);
 
@@ -25,9 +23,6 @@ class NumberList extends StatelessWidget {
           name: item.name,
           imageUrl: item.image,
           state: item.state,
-          onFocus: () {
-            onItemFocused(item);
-          },
           onSelect: () {
             onItemSelected(item);
           },

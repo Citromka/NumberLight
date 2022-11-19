@@ -14,12 +14,25 @@ class DetailsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DetailsBloc, DetailsState>(
+    return BlocConsumer<DetailsBloc, DetailsState>(
+      listenWhen: (_, state) => state.isListenable(),
+      buildWhen: (_, state) => !state.isListenable(),
+      listener: (context, state) {
+        if (state is DetailsNavigateBack) {
+          ModalRoute.of(context)?.navigator?.pop(false);
+        }
+      },
       builder: (context, state) {
         final localizations = AppLocalizations.of(context)!;
-        return (state is DetailsLoadedState)
-            ? _getItemContent(localizations: localizations, item: state.item)
-            : const LoadingContent();
+        if ((state is DetailsLoadedState)) {
+          return _getItemContent(localizations: localizations, item: state.item);
+        } else if (state is DetailsLoadingState) {
+          return const LoadingContent();
+        } else if (state is DetailsErrorState) {
+          return Center(child: Text(localizations.itemNotFoundError));
+        } else {
+          return Container();
+        }
       },
     );
   }
@@ -41,9 +54,7 @@ class DetailsContent extends StatelessWidget {
         ),
       );
     } else {
-      return Center(
-        child: Text(localizations.itemNotFoundError)
-      );
+      return Container();
     }
   }
 }

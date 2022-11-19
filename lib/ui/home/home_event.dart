@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:numbers_light/ui/home/model/number_light_presentation.dart';
 import 'package:numbers_light/ui/home/model/number_light_selection_state.dart';
 
@@ -11,3 +12,11 @@ class HomeItemStateChanged extends HomeEvent {
 
   HomeItemStateChanged({required this.item, required this.state});
 }
+
+class HomeOrientationEvent extends HomeEvent {
+  final Orientation orientation;
+
+  HomeOrientationEvent(this.orientation);
+}
+
+class HomeReturnEvent extends HomeEvent {}

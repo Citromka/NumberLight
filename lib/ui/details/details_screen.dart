@@ -16,9 +16,12 @@ class DetailsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.detailsTitle),
+        leading: BackButton(onPressed: () {
+          ModalRoute.of(context)?.navigator?.pop(true);
+        }),
       ),
-      body: BlocProvider<DetailsBloc>(
-        create: (context) => GetIt.I.get()..add(DetailsCreated(id)),
+      body: BlocProvider<DetailsBloc>.value(
+        value: GetIt.I.get()..add(DetailsSelected(id)),
         child: const DetailsContent(),
       ),
     );

@@ -8,10 +8,8 @@ import 'package:numbers_light/ui/home/home_screen.dart';
 class HomeRoute {
   static const home = '/';
 
-  Map<String, WidgetBuilder> get routes =>
-      {
-        home: (context) =>
-            BlocProvider<HomeBloc>(
+  Map<String, WidgetBuilder> get routes => {
+        home: (context) => BlocProvider(
               create: (_) => GetIt.I.get<HomeBloc>()..add(HomeCreated()),
               child: const HomeScreen(),
             )

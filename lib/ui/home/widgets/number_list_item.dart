@@ -6,7 +6,6 @@ class NumberListItem extends StatelessWidget {
   final String name;
   final String imageUrl;
   final NumberLightSelectionState state;
-  final Function onFocus;
   final Function onSelect;
 
   const NumberListItem({
@@ -14,7 +13,6 @@ class NumberListItem extends StatelessWidget {
     required this.name,
     required this.imageUrl,
     required this.state,
-    required this.onFocus,
     required this.onSelect,
   }) : super(key: key);
 
@@ -22,9 +20,6 @@ class NumberListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        onFocus();
-      },
-      onLongPress: () {
         onSelect();
       },
       child: Card(
