@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 abstract class DetailsEvent {}
 
-class DetailsSelected extends DetailsEvent {
-  final String? selectedItemId;
+class DetailsSelectedEvent extends DetailsEvent {
+  final String? selectedItemName;
 
-  DetailsSelected(this.selectedItemId);
+  DetailsSelectedEvent(this.selectedItemName);
 }
 
 class DetailsOrientationEvent extends DetailsEvent {
@@ -13,3 +13,5 @@ class DetailsOrientationEvent extends DetailsEvent {
 
   DetailsOrientationEvent(this.orientation);
 }
+
+class DetailsRefreshedEvent extends DetailsEvent {}

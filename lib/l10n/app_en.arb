@@ -1,5 +1,11 @@
 {
     "appTitle": "Number Light",
     "detailsTitle": "Number detail",
-    "itemNotFoundError": "No data was found for the selected item!"
+    "refreshButtonLabel": "Refresh",
+    "itemNotFoundError": "No data was found for the selected item!",
+    "timedOutError": "The network call time out!",
+    "cancelledError": "The network call was cancelled!",
+    "clientError": "An error happened on the client side! Contact your developer!",
+    "serverError": "An error happened on the server side! Try again later!",
+    "other": "An unknown error happened. We are doomed."
 }

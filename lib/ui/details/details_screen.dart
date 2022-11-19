@@ -21,7 +21,7 @@ class DetailsScreen extends StatelessWidget {
         }),
       ),
       body: BlocProvider<DetailsBloc>.value(
-        value: GetIt.I.get()..add(DetailsSelected(id)),
+        value: GetIt.I.get()..add(DetailsSelectedEvent(id)),
         child: const DetailsContent(),
       ),
     );

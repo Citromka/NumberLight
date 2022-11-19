@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
+import 'package:numbers_light/domain/model/base/domain_response.dart';
+import 'package:numbers_light/domain/model/base/error_type.dart';
 import 'package:numbers_light/domain/model/number_light.dart';
+import 'package:numbers_light/domain/use_case/get_list_use_case.dart';
 import 'package:numbers_light/ui/home/home_event.dart';
 import 'package:numbers_light/ui/home/home_state.dart';
 import 'package:numbers_light/ui/home/model/number_light_presentation.dart';
@@ -15,31 +18,47 @@ import 'package:numbers_light/ui/orientation/orientation_state.dart';
 @injectable
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final OrientationBloc _orientationBloc;
+  final GetListUseCase _getListUseCase;
   late StreamSubscription _orientationSubscription;
 
   List<NumberLightPresentation> _numberLightsList = [];
   Orientation _orientation = Orientation.portrait;
   NumberLightPresentation? _selectedItem;
+  ErrorType? _errorType;
 
-  HomeBloc(this._orientationBloc)
+  HomeBloc(this._orientationBloc, this._getListUseCase)
       : super(HomeInitialState()) {
-    _orientationSubscription = _orientationBloc.stream.listen((OrientationState state) {
-      if (state is OrientationSet && !isClosed) add(HomeOrientationEvent(state.orientation));
+    _orientationSubscription =
+        _orientationBloc.stream.listen((OrientationState state) {
+      if (state is OrientationSet && !isClosed) {
+        add(HomeOrientationEvent(state.orientation));
+      }
     });
     on<HomeCreated>(_handleHomeCreated);
     on<HomeItemStateChanged>(_handleHomeItemStateChanged);
     on<HomeOrientationEvent>(_handleHomeOrientationChanged);
     on<HomeReturnEvent>(_handleHomeReturn);
+    on<HomeRefreshEvent>(_handleHomeRefresh);
   }
 
   Future<void> _handleHomeCreated(
       HomeEvent event, Emitter<HomeState> emit) async {
-    _numberLightsList = await Future.delayed(const Duration(seconds: 2), () {
-      return _mockList
-          .map((NumberLight e) => e.toNumberLightPresentation())
-          .toList();
-    });
+    await _loadData(emit);
     _yieldBasedOnCurrentState(emit);
+  }
+
+  Future<void> _loadData(Emitter<HomeState> emit) async {
+    _errorType = null;
+    final response = await _getListUseCase.execute();
+    if (response is DomainResult) {
+      final list = (response.data as List<dynamic>)
+          .map((e) => e as NumberLight)
+          .toList();
+      _numberLightsList =
+          list.map((e) => e.toNumberLightPresentation()).toList();
+    } else {
+      _errorType = (response as DomainError).errorType;
+    }
   }
 
   Future<void> _handleHomeItemStateChanged(
@@ -53,19 +72,26 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       if (updatedList[elementIndex].state ==
           NumberLightSelectionState.selected) {
         _selectedItem = updatedList[elementIndex];
-        emit(HomeItemSelectionUpdated(_selectedItem?.id, _orientation));
-      } else if (updatedList[elementIndex].state == NumberLightSelectionState.focused) {
+        emit(HomeItemSelectionUpdated(_selectedItem?.name, _orientation));
+      } else if (updatedList[elementIndex].state ==
+          NumberLightSelectionState.focused) {
         if (_orientation == Orientation.landscape) {
           _selectedItem = updatedList[elementIndex];
-          emit(HomeItemSelectionUpdated(_selectedItem?.id, _orientation));
+          emit(HomeItemSelectionUpdated(_selectedItem?.name, _orientation));
         }
       }
       _yieldBasedOnCurrentState(emit);
     }
   }
 
-  void _handleHomeReturn(HomeReturnEvent event, Emitter<HomeState> emit) {
+  Future<void> _handleHomeReturn(HomeReturnEvent event, Emitter<HomeState> emit) async {
     _clearSelection();
+    _yieldBasedOnCurrentState(emit);
+  }
+
+  Future<void> _handleHomeRefresh(HomeRefreshEvent event, Emitter<HomeState> emit) async {
+    emit(HomeLoadingState());
+    await _loadData(emit);
     _yieldBasedOnCurrentState(emit);
   }
 
@@ -73,7 +99,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     final currentSelectedItem = _selectedItem;
     if (currentSelectedItem != null) {
       final index = _numberLightsList.indexOf(currentSelectedItem);
-      _numberLightsList[index] = _numberLightsList[index].copyWith(state: NumberLightSelectionState.normal);
+      _numberLightsList[index] = _numberLightsList[index]
+          .copyWith(state: NumberLightSelectionState.normal);
     }
     _selectedItem = null;
   }
@@ -89,17 +116,21 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     }
     _orientation = event.orientation;
     _selectedItem = _findSelectedItemBasedOnOrientation(_orientation);
-    if (_selectedItem != null) emit(HomeItemSelectionUpdated(_selectedItem!.id, _orientation));
+    if (_selectedItem != null) {
+      emit(HomeItemSelectionUpdated(_selectedItem!.name, _orientation));
+    }
     _yieldBasedOnCurrentState(emit);
   }
 
-  NumberLightPresentation? _findSelectedItemBasedOnOrientation(Orientation orientation) {
-    final index = _numberLightsList.indexWhere((element) => element.state == _stateForOrientation(orientation));
+  NumberLightPresentation? _findSelectedItemBasedOnOrientation(
+      Orientation orientation) {
+    final index = _numberLightsList.indexWhere(
+        (element) => element.state == _stateForOrientation(orientation));
     return (index != -1) ? _numberLightsList[index] : null;
   }
 
   NumberLightSelectionState _stateForOrientation(Orientation orientation) {
-    switch(orientation) {
+    switch (orientation) {
       case Orientation.portrait:
         return NumberLightSelectionState.selected;
       case Orientation.landscape:
@@ -123,7 +154,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     updatedList.addAll(_numberLightsList);
     for (var element in updatedList) {
       if (element.state == originalState) {
-        updatedList[updatedList.indexOf(element)] = element.copyWith(state: targetState);
+        updatedList[updatedList.indexOf(element)] =
+            element.copyWith(state: targetState);
       }
     }
     return updatedList;
@@ -134,41 +166,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       list: _numberLightsList,
       orientation: _orientation,
       selectedItem: _selectedItem,
+      errorType: _errorType,
     ));
   }
-
-  final List<NumberLight> _mockList = const [
-    NumberLight(
-        id: "1",
-        name: "1",
-        image:
-            "https://img.freepik.com/free-vector/counting-numbers-with-fruits_1308-72157.jpg?w=2000"),
-    NumberLight(
-        id: "2",
-        name: "2",
-        image:
-            "https://img.freepik.com/free-vector/counting-numbers-with-fruits_1308-72157.jpg?w=2000"),
-    NumberLight(
-        id: "3",
-        name: "3",
-        image:
-            "https://img.freepik.com/free-vector/counting-numbers-with-fruits_1308-72157.jpg?w=2000"),
-    NumberLight(
-        id: "4",
-        name: "4",
-        image:
-            "https://img.freepik.com/free-vector/counting-numbers-with-fruits_1308-72157.jpg?w=2000"),
-    NumberLight(
-        id: "5",
-        name: "5",
-        image:
-            "https://img.freepik.com/free-vector/counting-numbers-with-fruits_1308-72157.jpg?w=2000"),
-    NumberLight(
-        id: "6",
-        name: "6",
-        image:
-            "https://img.freepik.com/free-vector/counting-numbers-with-fruits_1308-72157.jpg?w=2000age"),
-  ];
 }
 
 extension on List<NumberLightPresentation> {

@@ -20,3 +20,5 @@ class HomeOrientationEvent extends HomeEvent {
 }
 
 class HomeReturnEvent extends HomeEvent {}
+
+class HomeRefreshEvent extends HomeEvent {}

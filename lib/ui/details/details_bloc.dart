@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:numbers_light/domain/model/number_light.dart';
+import 'package:numbers_light/domain/model/base/domain_response.dart';
+import 'package:numbers_light/domain/model/base/error_type.dart';
+import 'package:numbers_light/domain/model/number_light_detail.dart';
+import 'package:numbers_light/domain/use_case/get_detail_use_case.dart';
 import 'package:numbers_light/ui/details/details_event.dart';
 import 'package:numbers_light/ui/details/details_state.dart';
 import 'package:numbers_light/ui/orientation/orientation_bloc.dart';
@@ -12,16 +15,26 @@ import 'package:numbers_light/ui/orientation/orientation_state.dart';
 @injectable
 class DetailsBloc extends Bloc<DetailsEvent, DetailsState> {
   final OrientationBloc _orientationBloc;
+  final GetDetailUseCase _detailUseCase;
 
-  NumberLight? _item;
+  String? _selectedItemName;
+  NumberLightDetail? _item;
   late StreamSubscription _orientationSubscription;
+  ErrorType? _errorType;
 
-  DetailsBloc(this._orientationBloc) : super(DetailsInitialState()) {
-    _orientationSubscription = _orientationBloc.stream.listen((OrientationState state) {
-      if (state is OrientationSet && !isClosed) add(DetailsOrientationEvent(state.orientation));
+  DetailsBloc(
+    this._orientationBloc,
+    this._detailUseCase,
+  ) : super(DetailsInitialState()) {
+    _orientationSubscription =
+        _orientationBloc.stream.listen((OrientationState state) {
+      if (state is OrientationSet && !isClosed) {
+        add(DetailsOrientationEvent(state.orientation));
+      }
     });
-    on<DetailsSelected>(_handleDetailsSelected);
+    on<DetailsSelectedEvent>(_handleDetailsSelected);
     on<DetailsOrientationEvent>(_handleDetailsOrientation);
+    on<DetailsRefreshedEvent>(_handleDetailsRefreshed);
   }
 
   void dispose() {
@@ -29,14 +42,25 @@ class DetailsBloc extends Bloc<DetailsEvent, DetailsState> {
   }
 
   Future<void> _handleDetailsSelected(
-      DetailsSelected event, Emitter<DetailsState> emit) async {
-    if (event.selectedItemId == null) {
+      DetailsSelectedEvent event, Emitter<DetailsState> emit) async {
+    _selectedItemName = event.selectedItemName;
+    await _loadData(emit);
+  }
+
+  Future<void> _loadData(Emitter<DetailsState> emit) async {
+    final name = _selectedItemName;
+    if (name == null) {
       _yieldBasedOnCurrentState(emit);
     } else {
-      final index =
-      _mockList.indexWhere((element) => element.id == event.selectedItemId);
-      _item = (index != -1) ? _mockList[index] : null;
-      _item != null ? _yieldBasedOnCurrentState(emit) : emit(DetailsErrorState());
+      final response = await _detailUseCase.execute(name);
+      if (response is DomainResult) {
+        _item = response.data as NumberLightDetail?;
+      } else {
+        _errorType = (response as DomainError).errorType;
+      }
+      _item != null
+          ? _yieldBasedOnCurrentState(emit)
+          : emit(DetailsErrorState(errorType: _errorType));
     }
   }
 
@@ -47,40 +71,12 @@ class DetailsBloc extends Bloc<DetailsEvent, DetailsState> {
     }
   }
 
+  Future<void> _handleDetailsRefreshed(
+      DetailsRefreshedEvent event, Emitter<DetailsState> emit) async {
+    await _loadData(emit);
+  }
+
   void _yieldBasedOnCurrentState(Emitter<DetailsState> emit) {
     emit(DetailsLoadedState(_item));
   }
-
-  final List<NumberLight> _mockList = const [
-    NumberLight(
-        id: "1",
-        name: "1",
-        image:
-            "https://img.freepik.com/free-vector/counting-numbers-with-fruits_1308-72157.jpg?w=2000"),
-    NumberLight(
-        id: "2",
-        name: "2",
-        image:
-            "https://img.freepik.com/free-vector/counting-numbers-with-fruits_1308-72157.jpg?w=2000"),
-    NumberLight(
-        id: "3",
-        name: "3",
-        image:
-            "https://img.freepik.com/free-vector/counting-numbers-with-fruits_1308-72157.jpg?w=2000"),
-    NumberLight(
-        id: "4",
-        name: "4",
-        image:
-            "https://img.freepik.com/free-vector/counting-numbers-with-fruits_1308-72157.jpg?w=2000"),
-    NumberLight(
-        id: "5",
-        name: "5",
-        image:
-            "https://img.freepik.com/free-vector/counting-numbers-with-fruits_1308-72157.jpg?w=2000"),
-    NumberLight(
-        id: "6",
-        name: "6",
-        image:
-            "https://img.freepik.com/free-vector/counting-numbers-with-fruits_1308-72157.jpg?w=2000age"),
-  ];
 }
