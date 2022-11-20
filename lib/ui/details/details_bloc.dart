@@ -49,6 +49,7 @@ class DetailsBloc extends Bloc<DetailsEvent, DetailsState> {
 
   Future<void> _loadData(Emitter<DetailsState> emit) async {
     final name = _selectedItemName;
+    emit(DetailsLoadingState());
     if (name == null) {
       _yieldBasedOnCurrentState(emit);
     } else {

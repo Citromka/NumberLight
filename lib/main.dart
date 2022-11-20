@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:get_it/get_it.dart';
 import 'package:numbers_light/getit_root.dart';
@@ -14,6 +15,9 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   configureDependencies();
   _appNavigation = GetIt.I.get<AppNavigation>();
+  GetIt.instance.registerSingleton<BaseCacheManager>(
+    DefaultCacheManager(),
+  );
   runApp(const MyApp());
 }
 

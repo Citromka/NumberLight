@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:get_it/get_it.dart';
 import 'package:numbers_light/ui/home/model/number_light_selection_state.dart';
 
 class NumberListItem extends StatelessWidget {
@@ -33,11 +35,14 @@ class NumberListItem extends StatelessWidget {
               ClipOval(
                 child: CachedNetworkImage(
                   imageUrl: imageUrl,
+                  cacheManager: GetIt.instance.get<BaseCacheManager>(),
                   width: 100,
                   height: 100,
                   fit: BoxFit.fill,
                   placeholder: (context, _) {
-                    return Container();
+                    return Container(
+                      color: Colors.grey[200],
+                    );
                   },
                 ),
               )
